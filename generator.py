@@ -7,6 +7,7 @@ import chess.pgn
 
 NODE_CUT_OFF = 500
 EVAL_CUT_OFF = 200
+debug = "--debug" in sys.argv
 
 
 class Color(Enum):
@@ -59,9 +60,10 @@ class InputNode:
         result.append(("best", best))
 
         # append debug
-        result.append(("score", self.score))
-        result.append(("count", self.count))
-        result.append(("eval", self.eval()))
+        if debug:
+            result.append(("score", self.score))
+            result.append(("count", self.count))
+            result.append(("eval", self.eval()))
 
         # build tree recursively
         if self.children:
