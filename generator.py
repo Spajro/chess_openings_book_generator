@@ -101,13 +101,13 @@ root = InputNode(Color.WHITE)
 game = chess.pgn.read_game(pgn)
 count = 0
 while game is not None:
-    if game.variations:
+    tc = int(game.headers["TimeControl"].split('+')[0])
+    if tc >= 600 and game.variations:
         root.insert(convert_result(game.headers['Result']), game.variations[0], 1)
     game = chess.pgn.read_game(pgn)
     count += 1
 
 print("Games count: ", count)
-
 pgn.close()
 
 json = json.dumps(root.to_dict())
