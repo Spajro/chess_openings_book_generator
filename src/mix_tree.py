@@ -104,7 +104,7 @@ def convert_result(result: str) -> int:
 
 
 if len(sys.argv) < 4:
-    print("Usage: generator.py PGN_PATH JSON_PATH MAX_DEPTH")
+    print("Usage: pgn_tree.py PGN_PATH JSON_PATH MAX_DEPTH")
     exit(1)
 
 pgn_path = sys.argv[1]

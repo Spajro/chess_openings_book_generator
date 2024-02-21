@@ -1,82 +1,35 @@
 import json
-import sys
-from enum import Enum
-from operator import itemgetter
 
 import chess.pgn
+from chess import Color
 
-NODE_CUT_OFF = 500
-EVAL_CUT_OFF = 200
-debug = "--debug" in sys.argv
-
-
-class Color(Enum):
-    WHITE = 1
-    BLACK = 2
+from src import config, pgn_tree, mix_tree
 
 
-def next_color(color: Color) -> Color:
-    match color:
-        case Color.WHITE:
-            return Color.BLACK
-        case Color.BLACK:
-            return Color.WHITE
+def __write(path, v):
+    f = open(path, "w")
+    f.write(v)
+    f.close()
 
 
-class InputNode:
-    def __init__(self, color: Color):
-        self.score: int = 0
-        self.count: int = 0
-        self.children: dict[str, 'InputNode'] = dict()
-        self.color = color
+def __read(pgn_path: str, root):
+    pgn = open(pgn_path, encoding="utf-8")
+    game = chess.pgn.read_game(pgn)
+    count = 0
+    while game is not None:
+        tc = int(game.headers["TimeControl"].split('+')[0])
+        if tc >= 600 and game.variations:
+            # if game.variations:
+            root.insert(__convert_result(game.headers['Result']), game.variations[0], 1)
+        game = chess.pgn.read_game(pgn)
+        count += 1
 
-    def insert(self, result: int, node: chess.pgn.GameNode, depth):
-        self.score += result
-        self.count += 1
-        if not node.move.uci() in self.children:
-            self.children[node.move.uci()] = InputNode(next_color(self.color))
-        if node.variations and depth <= threshold:
-            self.children[node.move.uci()].insert(result, node.variations[0], depth + 1)
-
-    def eval(self):
-        if self.count == 0:
-            return 0
-        return self.score / self.count
-
-    def to_dict(self):
-        result = []
-
-        # find best move
-        candidates = list((k, v.eval()) for (k, v) in self.children.items() if v.count > EVAL_CUT_OFF)
-
-        if len(candidates) == 0:
-            return None
-
-        if self.color == Color.WHITE:
-            best = max(candidates, key=itemgetter(1))[0]
-        else:
-            best = min(candidates, key=itemgetter(1))[0]
-
-        result.append(("best", best))
-
-        # append debug
-        if debug:
-            result.append(("score", self.score))
-            result.append(("count", self.count))
-            result.append(("eval", self.eval()))
-
-        # build tree recursively
-        if self.children:
-            non_empty_children = [(k, v) for k, v in self.children.items() if v.children and v.count > NODE_CUT_OFF]
-            children_dicts = [x for x in (list((k, v.to_dict()) for (k, v) in non_empty_children)) if x[1] is not None]
-        else:
-            children_dicts = []
-
-        result += children_dicts
-        return {k: v for (k, v) in result}
+    print("Games count: ", count)
+    pgn.close()
+    return root
 
 
-def convert_result(result: str) -> int:
+def __convert_result(result: str) -> int:
     match result:
         case "0-1":
             return -1
@@ -88,29 +41,22 @@ def convert_result(result: str) -> int:
             return 0
 
 
-if len(sys.argv) < 4:
-    print("Usage: generator.py PGN_PATH JSON_PATH MAX_DEPTH")
-    exit(1)
+def __get_root_for_mode(mode: str):
+    match mode:
+        case 'pgn':
+            return pgn_tree.InputNode(Color.White)
+        case 'mix':
+            return mix_tree.InputNode(Color.White)
+        case 'raw':
+            return None
+        case _:
+            exit(-1)
 
-pgn_path = sys.argv[1]
-json_path = sys.argv[2]
-threshold = int(sys.argv[3])
 
-pgn = open(pgn_path, encoding="utf-8")
-root = InputNode(Color.WHITE)
-game = chess.pgn.read_game(pgn)
-count = 0
-while game is not None:
-    tc = int(game.headers["TimeControl"].split('+')[0])
-    if tc >= 600 and game.variations:
-        root.insert(convert_result(game.headers['Result']), game.variations[0], 1)
-    game = chess.pgn.read_game(pgn)
-    count += 1
+args = config.parse_argv(2)
+mode = args['params'][0]
+json_path = args['params'][1]
+pgn_path = args['params'][2]
+root = __get_root_for_mode(mode)
 
-print("Games count: ", count)
-pgn.close()
-
-json = json.dumps(root.to_dict())
-f = open(json_path, "w")
-f.write(json)
-f.close()
+__write(json_path, json.dumps(__read(pgn_path, root).to_dict()))
