@@ -1,31 +1,19 @@
 import concurrent
-import json
 import sys
-from enum import Enum
 from typing import Union
 from concurrent.futures import ThreadPoolExecutor
 
 import chess.pgn
 from stockfish import Stockfish
 
+from src.core import Color, next_color
+
 # PARAMETRY
 NODE_CUT_OFF = 10  # minimalna liczba partii dla której rozpatrujemy wierzchołek
 debug = "--debug" in sys.argv
 TIME_PER_MOVE = 5 * 1000  # czas na ewaluację pozycji przez stockfisha
 stockfish_path = "F:\\.Programy\\stockfish\\stockfish-windows-x86-64-avx2.exe"
-
-
-class Color(Enum):
-    WHITE = 1
-    BLACK = 2
-
-
-def next_color(color: Color) -> Color:
-    match color:
-        case Color.WHITE:
-            return Color.BLACK
-        case Color.BLACK:
-            return Color.WHITE
+threshold = 5
 
 
 def get_best_for_node(node: 'InputNode', stockfish: Stockfish) -> str:
@@ -89,44 +77,3 @@ class InputNode:
 
         result += children_dicts
         return {k: v for (k, v) in result}
-
-
-def convert_result(result: str) -> int:
-    match result:
-        case "0-1":
-            return -1
-        case "1-0":
-            return 1
-        case "1/2-1/2":
-            return 0
-        case _:
-            return 0
-
-
-if len(sys.argv) < 4:
-    print("Usage: pgn_tree.py PGN_PATH JSON_PATH MAX_DEPTH")
-    exit(1)
-
-pgn_path = sys.argv[1]
-json_path = sys.argv[2]
-threshold = int(sys.argv[3])
-
-pgn = open(pgn_path, encoding="utf-8")
-root = InputNode(Color.WHITE, None)
-game = chess.pgn.read_game(pgn)
-count = 0
-while game is not None:
-    tc = int(game.headers["TimeControl"].split('+')[0])
-    if tc >= 600 and game.variations:
-        # if game.variations:
-        root.insert(convert_result(game.headers['Result']), game.variations[0], 1)
-    game = chess.pgn.read_game(pgn)
-    count += 1
-
-print("Games count: ", count)
-pgn.close()
-
-json = json.dumps(root.to_dict())
-f = open(json_path, "w")
-f.write(json)
-f.close()
