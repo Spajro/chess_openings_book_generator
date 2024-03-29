@@ -1,6 +1,18 @@
 import sys
 
 
+class Context:
+    def __init__(self, params, values, flags):
+        self.params = params
+        self.values = values
+        self.flags = flags
+
+    def get_value_or_default(self, key, default):
+        if key in self.values:
+            return self.values[key]
+        return default
+
+
 def __is_key(string: str):
     return string[0] == '-'
 
@@ -27,8 +39,4 @@ def parse_argv(params_count: int):
                 values[key] = temp
         else:
             print("ERROR")
-    return {
-        "params": params,
-        "values": values,
-        "flags": flags,
-    }
+    return Context(params, values, flags)
