@@ -34,12 +34,12 @@ def get_best_for_node_threaded(key: str, node: 'InputNode', stockfish: Stockfish
 
 
 class InputNode:
-    def __init__(self, color: Color, root: Union['InputNode', None], values: MixValues):
+    def __init__(self, color: Color, root: Union['InputNode', None], ctx: Context):
         self.count: int = 0
         self.children: dict[str, 'InputNode'] = dict()
         self.color = color
         self.root = root
-        self.values = values
+        self.values = MixValues(ctx)
 
     def insert(self, result: int, node: chess.pgn.GameNode, depth):
         self.count += 1
