@@ -6,6 +6,7 @@ from src import config, pgn_tree, mix_tree
 from src.config import Context
 from src.core import Color, convert_result
 from src.mix_tree import MixValues
+from src.pgn_tree import PgnValues
 
 
 def __write(path, v):
@@ -37,7 +38,7 @@ def __get_root(ctx: Context):
     if pgn and stock:
         return mix_tree.MixNode(Color.WHITE, None, MixValues(ctx))
     if pgn:
-        return pgn_tree.InputNode(Color.WHITE)
+        return pgn_tree.PgnNode(Color.WHITE, PgnValues(ctx))
     exit(-1)
 
 

@@ -1,30 +1,33 @@
-import sys
 from operator import itemgetter
 
 import chess.pgn
 
-from src.core import Color, next_color
-
-# Parametry
-NODE_CUT_OFF = 500
-EVAL_CUT_OFF = 200
-debug = "--debug" in sys.argv
-threshold = 5
+from src.config import Context
+from src.core import Color, next_color, Node
 
 
-class InputNode:
-    def __init__(self, color: Color):
+class PgnValues:
+    def __int__(self, ctx: Context):
+        self.node_cut_off = ctx.get_value_or_default("node_cut_off", 500)
+        self.eval_cut_off = ctx.get_value_or_default("eval_cut_off", 10)
+        self.max_depth = ctx.get_value_or_default("max_depth", 5)  # max depth of tree
+        self.debug = "--debug" in ctx.flags
+
+
+class PgnNode(Node):
+    def __init__(self, color: Color, values: PgnValues):
         self.score: int = 0
         self.count: int = 0
-        self.children: dict[str, 'InputNode'] = dict()
+        self.children: dict[str, 'PgnNode'] = dict()
         self.color = color
+        self.values = values
 
     def insert(self, result: int, node: chess.pgn.GameNode, depth):
         self.score += result
         self.count += 1
         if not node.move.uci() in self.children:
-            self.children[node.move.uci()] = InputNode(next_color(self.color))
-        if node.variations and depth <= threshold:
+            self.children[node.move.uci()] = PgnNode(next_color(self.color), self.values)
+        if node.variations and depth <= self.values.max_depth:
             self.children[node.move.uci()].insert(result, node.variations[0], depth + 1)
 
     def eval(self):
@@ -33,10 +36,8 @@ class InputNode:
         return self.score / self.count
 
     def to_dict(self):
-        result = []
-
         # find best move
-        candidates = list((k, v.eval()) for (k, v) in self.children.items() if v.count > EVAL_CUT_OFF)
+        candidates = list((k, v.eval()) for (k, v) in self.children.items() if v.count > self.values.eval_cut_off)
 
         if len(candidates) == 0:
             return None
@@ -46,17 +47,18 @@ class InputNode:
         else:
             best = min(candidates, key=itemgetter(1))[0]
 
-        result.append(("best", best))
+        result = list(("best", best))
 
         # append debug
-        if debug:
+        if self.values.debug:
             result.append(("score", self.score))
             result.append(("count", self.count))
             result.append(("eval", self.eval()))
 
         # build tree recursively
         if self.children:
-            non_empty_children = [(k, v) for k, v in self.children.items() if v.children and v.count > NODE_CUT_OFF]
+            non_empty_children = [(k, v) for k, v in self.children.items() if
+                                  v.children and v.count > self.values.node_cut_off]
             children_dicts = [x for x in (list((k, v.to_dict()) for (k, v) in non_empty_children)) if x[1] is not None]
         else:
             children_dicts = []
