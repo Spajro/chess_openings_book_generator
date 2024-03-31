@@ -5,6 +5,7 @@ import chess.pgn
 from src import config, pgn_tree, mix_tree
 from src.config import Context
 from src.core import Color, convert_result
+from src.mix_tree import MixValues
 
 
 def __write(path, v):
@@ -34,7 +35,7 @@ def __get_root(ctx: Context):
     stock = "stockfish" in ctx.values
     pgn = "pgn" in ctx.values
     if pgn and stock:
-        return mix_tree.InputNode(Color.WHITE, None, ctx)
+        return mix_tree.MixNode(Color.WHITE, None, MixValues(ctx))
     if pgn:
         return pgn_tree.InputNode(Color.WHITE)
     exit(-1)

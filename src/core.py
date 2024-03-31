@@ -1,5 +1,6 @@
 from enum import Enum
 
+import chess.pgn
 
 class Color(Enum):
     WHITE = 1
@@ -24,3 +25,11 @@ def convert_result(result: str) -> int:
             return 0
         case _:
             return 0
+
+
+class Node:
+    def insert(self, result: int, node: chess.pgn.GameNode, depth: int):
+        pass
+
+    def to_dict(self):
+        pass

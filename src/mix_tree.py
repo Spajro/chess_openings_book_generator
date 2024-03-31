@@ -6,7 +6,7 @@ import chess.pgn
 from stockfish import Stockfish
 
 from src.config import Context
-from src.core import Color, next_color
+from src.core import Color, next_color, Node
 
 
 class MixValues:
@@ -17,15 +17,18 @@ class MixValues:
         self.stockfish = ctx.get_value_or_default("stockfish", "NONE")
 
 
-def get_best_for_node(node: 'InputNode', stockfish: Stockfish, time: int) -> str:
+def get_best_for_node(node: 'MixNode', stockfish: Stockfish, time: int) -> str:
     path = node.path_from_root()
     stockfish.set_position(path)
     best = stockfish.get_best_move_time(time)
     return best
 
 
-def get_best_for_node_threaded(key: str, node: 'InputNode', stockfish: Stockfish, time: int) -> tuple[
-    str, 'InputNode', str]:
+def get_best_for_node_threaded(key: str,
+                               node: 'MixNode',
+                               stockfish: Stockfish,
+                               time: int
+                               ) -> tuple[str, 'MixNode', str]:
     path = node.path_from_root()
     print("P", path)
     stockfish.set_position(path)
@@ -33,18 +36,18 @@ def get_best_for_node_threaded(key: str, node: 'InputNode', stockfish: Stockfish
     return key, node, best
 
 
-class InputNode:
-    def __init__(self, color: Color, root: Union['InputNode', None], ctx: Context):
+class MixNode(Node):
+    def __init__(self, color: Color, root: Union['MixNode', None], values: MixValues):
         self.count: int = 0
-        self.children: dict[str, 'InputNode'] = dict()
+        self.children: dict[str, 'MixNode'] = dict()
         self.color = color
         self.root = root
-        self.values = MixValues(ctx)
+        self.values = values
 
     def insert(self, result: int, node: chess.pgn.GameNode, depth):
         self.count += 1
         if not node.move.uci() in self.children:
-            self.children[node.move.uci()] = InputNode(next_color(self.color), self, self.values)
+            self.children[node.move.uci()] = MixNode(next_color(self.color), self, self.values)
         if node.variations and depth <= self.values.max_depth:
             self.children[node.move.uci()].insert(result, node.variations[0], depth + 1)
 
@@ -53,7 +56,7 @@ class InputNode:
             return []
         return self.root.__path_from_root(self)
 
-    def __path_from_root(self, last: 'InputNode') -> list[str]:
+    def __path_from_root(self, last: 'MixNode') -> list[str]:
         if self.root is None:
             return [next(move for move, node in self.children.items() if node == last)]
         return self.root.__path_from_root(self) + [next(move for move, node in self.children.items() if node == last)]
