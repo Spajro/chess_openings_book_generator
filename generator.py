@@ -13,8 +13,8 @@ def __write(path, v):
     f.close()
 
 
-def __read(pgn_path: str, root):
-    pgn = open(pgn_path, encoding="utf-8")
+def __read(root, ctx: Context):
+    pgn = open(ctx.values["pgn"], encoding="utf-8")
     game = chess.pgn.read_game(pgn)
     count = 0
     while game is not None:
@@ -30,22 +30,18 @@ def __read(pgn_path: str, root):
     return root
 
 
-def __get_root_for_mode(mode: str, ctx: Context):
-    match mode:
-        case 'pgn':
-            return pgn_tree.InputNode(Color.WHITE)
-        case 'mix':
-            return mix_tree.InputNode(Color.WHITE, None, ctx)
-        case 'raw':
-            return None
-        case _:
-            exit(-1)
+def __get_root(ctx: Context):
+    stock = "stockfish" in ctx.values
+    pgn = "pgn" in ctx.values
+    if pgn and stock:
+        return mix_tree.InputNode(Color.WHITE, None, ctx)
+    if pgn:
+        return pgn_tree.InputNode(Color.WHITE)
+    exit(-1)
 
 
-ctx = config.parse_argv(2)
-mode = ctx['params'][0]
-json_path = ctx['params'][1]
-pgn_path = ctx['params'][2]
-root = __get_root_for_mode(mode, ctx)
+ctx = config.parse_argv(1)
+json_path = ctx['params'][0]
+root = __get_root(ctx)
 
-__write(json_path, json.dumps(__read(pgn_path, root).to_dict()))
+__write(json_path, json.dumps(__read(root, ctx).to_dict()))
