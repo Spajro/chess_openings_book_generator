@@ -15,7 +15,7 @@ def __write(path, v):
 
 
 def __read(root, ctx: Context):
-    pgn = open(ctx.values["pgn"], encoding="utf-8")
+    pgn = open(ctx.values["-pgn"][0], encoding="utf-8")
     game = chess.pgn.read_game(pgn)
     count = 0
     while game is not None:
@@ -32,8 +32,8 @@ def __read(root, ctx: Context):
 
 
 def __get_root(ctx: Context):
-    stock = "stockfish" in ctx.values
-    pgn = "pgn" in ctx.values
+    stock = "-stockfish" in ctx.values
+    pgn = "-pgn" in ctx.values
     if pgn and stock:
         return mix_tree.MixNode(Color.WHITE, None, MixValues(ctx))
     if pgn:
@@ -42,7 +42,7 @@ def __get_root(ctx: Context):
 
 
 ctx = config.parse_argv(1)
-json_path = ctx['params'][0]
+json_path = ctx.params[0]
 root = __get_root(ctx)
 
 __write(json_path, json.dumps(__read(root, ctx).to_dict()))

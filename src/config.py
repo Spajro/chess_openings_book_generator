@@ -39,4 +39,5 @@ def parse_argv(params_count: int):
                 values[key] = temp
         else:
             print("ERROR")
+            exit(-1)
     return Context(params, values, flags)
