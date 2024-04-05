@@ -9,7 +9,7 @@ class Context:
 
     def get_value_or_default(self, key, default):
         if key in self.values:
-            return self.values[key]
+            return self.values[key][0]
         return default
 
 

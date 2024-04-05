@@ -10,11 +10,11 @@ from src.core import Color, next_color, Node
 
 
 class MixValues:
-    def __int__(self, ctx: Context):
-        self.time = ctx.get_value_or_default("time_per_node", 5 * 1000)
-        self.cut_off = ctx.get_value_or_default("cut_off", 10)  # number of occurrences for node to be included in json
-        self.max_depth = ctx.get_value_or_default("max_depth", 5)  # max depth of tree
-        self.stockfish = ctx.get_value_or_default("stockfish", "NONE")
+    def __init__(self, ctx: Context):
+        self.time = int(ctx.get_value_or_default("-time_per_node", 5 * 1000))
+        self.cut_off = int(ctx.get_value_or_default("-cut_off", 10))  # number of occurrences for node to be included in json
+        self.max_depth = int(ctx.get_value_or_default("-max_depth", 5)) # max depth of tree
+        self.stockfish = ctx.get_value_or_default("-stockfish", "NONE")
 
 
 def get_best_for_node(node: 'MixNode', stockfish: Stockfish, time: int) -> str:
