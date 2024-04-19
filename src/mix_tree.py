@@ -11,10 +11,10 @@ from src.core import Color, next_color, Node
 
 class MixValues:
     def __init__(self, ctx: Context):
-        self.time = ctx.get_value_or_default("-time_per_node", 5 * 1000)
-        self.cut_off = ctx.get_value_or_default("-cut_off", 10)
-        self.max_depth = ctx.get_value_or_default("-max_depth", 5)
-        self.stockfish = ctx.get_value_or_default("-stockfish", "NONE")
+        self.time = ctx.get_value_or_default("time_per_node", 5 * 1000)
+        self.cut_off = ctx.get_value_or_default("cut_off", 10)
+        self.max_depth = ctx.get_value_or_default("max_depth", 5)
+        self.stockfish = ctx.get_value_or_exit("stockfish")
 
 
 def get_best_for_node(node: 'MixNode', stockfish: Stockfish, time: int) -> str:

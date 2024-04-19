@@ -8,10 +8,10 @@ from src.core import Color, next_color, Node
 
 class PgnValues:
     def __init__(self, ctx: Context):
-        self.node_cut_off = ctx.get_value_or_default("-node_cut_off", 500)
-        self.eval_cut_off = ctx.get_value_or_default("-eval_cut_off", 10)
-        self.max_depth = ctx.get_value_or_default("-max_depth", 5)
-        self.debug = "--debug" in ctx.flags
+        self.node_cut_off = ctx.get_value_or_default("node_cut_off", 500)
+        self.eval_cut_off = ctx.get_value_or_default("eval_cut_off", 10)
+        self.max_depth = ctx.get_value_or_default("max_depth", 5)
+        self.debug = ctx.has_flag("debug")
 
 
 class PgnNode(Node):
