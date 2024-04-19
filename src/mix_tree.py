@@ -1,6 +1,6 @@
-import concurrent
+import concurrent.futures
+from operator import itemgetter
 from typing import Union
-from concurrent.futures import ThreadPoolExecutor
 
 import chess.pgn
 from stockfish import Stockfish
@@ -17,28 +17,19 @@ class MixValues:
         self.stockfish = ctx.get_value_or_exit("stockfish")
 
 
-def get_best_for_node(node: 'MixNode', stockfish: Stockfish, time: int) -> str:
+def get_best_for_node(node: 'MixNode', stockfish_path: str, time: int) -> str:
+    stockfish = Stockfish(stockfish_path)
     path = node.path_from_root()
+    print("P", path)
     stockfish.set_position(path)
     best = stockfish.get_best_move_time(time)
     return best
 
 
-def get_best_for_node_threaded(key: str,
-                               node: 'MixNode',
-                               stockfish: Stockfish,
-                               time: int
-                               ) -> tuple[str, 'MixNode', str]:
-    path = node.path_from_root()
-    print("P", path)
-    stockfish.set_position(path)
-    best = stockfish.get_best_move_time(time)
-    return key, node, best
-
-
 class MixNode(Node):
     def __init__(self, color: Color, root: Union['MixNode', None], values: MixValues):
         self.count: int = 0
+        self.eval: float
         self.children: dict[str, 'MixNode'] = dict()
         self.color = color
         self.root = root
@@ -62,21 +53,47 @@ class MixNode(Node):
         return self.root.__path_from_root(self) + [next(move for move, node in self.children.items() if node == last)]
 
     def to_dict(self):
-        return self.__to_dict(get_best_for_node(self, Stockfish(self.values.stockfish), self.values.time))
+        candidates = list((k, v.eval) for (k, v) in self.children.items() if v.count > self.values.cut_off)
 
-    def __to_dict(self, best):
+        if len(candidates) == 0:
+            return None
+
+        if self.color == Color.WHITE:
+            best = max(candidates, key=itemgetter(1))[0]
+        else:
+            best = min(candidates, key=itemgetter(1))[0]
+
+        result = [("best", best)]
+
         # build tree recursively
         if self.children:
-            non_empty_children = [(k, v) for k, v in self.children.items()
-                                  if v.children and v.count > self.values.cut_off]
-            data = [(k, v, Stockfish(self.values.stockfish)) for k, v in non_empty_children]
-
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = [executor.submit(get_best_for_node_threaded, k, v, s, self.values.time) for k, v, s in data]
-            children_result = [f.result() for f in futures]
-            children_dicts = [(k, v.__to_dict(b)) for k, v, b in children_result]
+            non_empty_children = [(k, v) for k, v in self.children.items() if
+                                  v.children and v.count > self.values.cut_off]
+            children_dicts = [x for x in (list((k, v.to_dict()) for (k, v) in non_empty_children)) if x[1] is not None]
         else:
             children_dicts = []
 
-        result = [("best", best)] + children_dicts
+        result += children_dicts
         return {k: v for (k, v) in result}
+
+    def get_nodes_list(self):
+        if self.count > self.values.cut_off:
+            result = [self]
+        else:
+            result = []
+        for children in self.children.values():
+            result += children.get_nodes_list()
+        return result
+
+    def eval(self):
+        nodes = self.get_nodes_list()
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [(executor.submit(get_best_for_node, n, self.values.stockfish, self.values.time), n)
+                       for n in nodes]
+        results = [(f.result(), n) for f, n in futures]
+
+        for e, n in results:
+            n.eval = e
+
+        print("E ", len(nodes))

@@ -34,7 +34,7 @@ def __read(root, ctx: Context):
 
 def __get_root(ctx: Context):
     stock = ctx.has_flag("stockfish")
-    pgn = ctx.has_flag("stockfish")
+    pgn = ctx.has_flag("pgn")
     if pgn and stock:
         return mix_tree.MixNode(Color.WHITE, None, MixValues(ctx))
     if pgn:
@@ -45,5 +45,7 @@ def __get_root(ctx: Context):
 ctx = config.parse_argv()
 json_path = ctx.params[0]
 root = __get_root(ctx)
-
-__write(json_path, json.dumps(__read(root, ctx).to_dict()))
+tree = __read(root, ctx)
+if ctx.has_flag("stockfish"):
+    tree.eval()
+__write(json_path, json.dumps(tree.to_dict()))
