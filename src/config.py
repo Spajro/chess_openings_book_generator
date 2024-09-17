@@ -16,7 +16,8 @@ class Context:
         flag = self.__key_to_flag(key)
         if flag in self.flags and len(self.flags[flag]) > 0:
             return self.flags[flag][0]
-        exit(-3)
+        print("No such value", key)
+        exit(-1)
 
     def has_flag(self, key):
         flag = self.__key_to_flag(key)

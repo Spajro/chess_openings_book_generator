@@ -39,6 +39,7 @@ def __get_root(ctx: Context):
         return mix_tree.MixNode(Color.WHITE, None, MixValues(ctx))
     if pgn:
         return pgn_tree.PgnNode(Color.WHITE, PgnValues(ctx))
+    print("Cant create root node ", stock, pgn)
     exit(-1)
 
 
@@ -48,6 +49,6 @@ root = __get_root(ctx)
 tree = __read(root, ctx)
 if ctx.has_flag("stockfish"):
     size = tree.size()
-    print("Nodes to eval: " + size, " Time estimation: " + size * ctx.get_value_or_default("time_per_node", 0)/1000)
+    print("Nodes to eval: ", size, " Time estimation: ", size * ctx.get_value_or_default("time_per_node", 0) / 1000)
     tree.eval()
 __write(json_path, json.dumps(tree.to_dict()))
