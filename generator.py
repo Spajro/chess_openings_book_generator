@@ -47,5 +47,7 @@ json_path = ctx.params[0]
 root = __get_root(ctx)
 tree = __read(root, ctx)
 if ctx.has_flag("stockfish"):
+    size = tree.size()
+    print("Nodes to eval: " + size, " Time estimation: " + size * ctx.get_value_or_default("time_per_node", 0)/1000)
     tree.eval()
 __write(json_path, json.dumps(tree.to_dict()))

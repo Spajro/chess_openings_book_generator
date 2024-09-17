@@ -35,6 +35,9 @@ class PgnNode(Node):
             return 0
         return self.score / self.count
 
+    def size(self):
+        return 1 + len(self.children)
+
     def to_dict(self):
         # find best move
         candidates = list((k, v.eval()) for (k, v) in self.children.items() if v.count > self.values.eval_cut_off)

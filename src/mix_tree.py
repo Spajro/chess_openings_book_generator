@@ -42,6 +42,9 @@ class MixNode(Node):
         if node.variations and depth <= self.values.max_depth:
             self.children[node.move.uci()].insert(result, node.variations[0], depth + 1)
 
+    def size(self):
+        return 1 + len(self.children)
+
     def path_from_root(self) -> list[str]:
         if self.root is None:
             return []

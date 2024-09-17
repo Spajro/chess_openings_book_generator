@@ -2,6 +2,7 @@ from enum import Enum
 
 import chess.pgn
 
+
 class Color(Enum):
     WHITE = 1
     BLACK = 2
@@ -32,4 +33,7 @@ class Node:
         pass
 
     def to_dict(self):
+        pass
+
+    def size(self):
         pass
