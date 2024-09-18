@@ -43,7 +43,7 @@ class MixNode(Node):
             self.children[node.move.uci()].insert(result, node.variations[0], depth + 1)
 
     def size(self):
-        return 1 + len(self.children)
+        return 1 + sum(map(lambda x: x.size(), filter(lambda x: x.count > self.values.cut_off,self.children.values())))
 
     def path_from_root(self) -> list[str]:
         if self.root is None:
@@ -91,7 +91,7 @@ class MixNode(Node):
     def eval(self):
         nodes = self.get_nodes_list()
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with concurrent.futures.ThreadPoolExecutor(10) as executor:
             futures = [(executor.submit(get_best_for_node, n, self.values.stockfish, self.values.time), n)
                        for n in nodes]
         results = [(f.result(), n) for f, n in futures]

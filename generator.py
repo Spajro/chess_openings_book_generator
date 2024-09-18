@@ -1,4 +1,6 @@
+import datetime
 import json
+import time
 
 import chess.pgn
 
@@ -43,12 +45,21 @@ def __get_root(ctx: Context):
     exit(-1)
 
 
+def __estimate(tree, ctx: Context):
+    size = tree.size()
+    estimate = (size * ctx.get_value_or_default("time_per_node", 5 * 1000)) / 1000
+    date = datetime.datetime.fromtimestamp(time.time()+estimate).strftime('%c')
+    print("Nodes to eval: ", size,
+          " Time estimation: ", estimate, "s",
+          " Finish time estimation: ", date
+          )
+
+
 ctx = config.parse_argv()
 json_path = ctx.params[0]
 root = __get_root(ctx)
 tree = __read(root, ctx)
 if ctx.has_flag("stockfish"):
-    size = tree.size()
-    print("Nodes to eval: ", size, " Time estimation: ", size * ctx.get_value_or_default("time_per_node", 0) / 1000)
+    __estimate(tree, ctx)
     tree.eval()
 __write(json_path, json.dumps(tree.to_dict()))
