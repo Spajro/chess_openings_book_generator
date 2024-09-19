@@ -14,6 +14,7 @@ class MixValues:
         self.time = ctx.get_value_or_default("time_per_node", 5 * 1000)
         self.cut_off = ctx.get_value_or_default("cut_off", 10)
         self.max_depth = ctx.get_value_or_default("max_depth", 5)
+        self.threads = ctx.get_value_or_default("threads", 10)
         self.stockfish = ctx.get_value_or_exit("stockfish")
 
     def to_dict(self):
@@ -103,7 +104,7 @@ class MixNode(Node):
         nodes = self.get_nodes_list()
         print("E ", len(nodes))
 
-        with concurrent.futures.ThreadPoolExecutor(10) as executor:
+        with concurrent.futures.ThreadPoolExecutor(self.values.threads) as executor:
             futures = [(executor.submit(get_best_for_node, n, self.values.stockfish, self.values.time), n)
                        for n in nodes]
         results = [(f.result(), n) for f, n in futures]

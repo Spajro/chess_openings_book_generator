@@ -48,19 +48,21 @@ def __get_root(ctx: Context):
 def __estimate(tree, ctx: Context):
     size = tree.size()
     cut_size = tree.cut_size()
-    estimate = (cut_size * ctx.get_value_or_default("time_per_node", 5 * 1000)) / 1000 / 10
+    tpn = ctx.get_value_or_default("time_per_node", 5 * 1000)
+    threads = ctx.get_value_or_default("threads", 10)
+    estimate = ((cut_size * tpn) / threads)
     date = datetime.datetime.fromtimestamp(time.time() + estimate).strftime('%c')
     print("Nodes: ", size,
           "\nNodes after cut: ", cut_size,
-          "\nTime estimation: ", estimate, "s",
+          "\nTime estimation: ", estimate / 1000, "s",
           "\nFinish time estimation: ", date
           )
 
 
-def __to_json(tree,pgn):
+def __to_json(tree, pgn):
     jsonable = tree.to_dict()
     jsonable["values"] = tree.values.to_dict()
-    jsonable["values"]["pgn"]=pgn
+    jsonable["values"]["pgn"] = pgn
     return json.dumps(jsonable)
 
 
@@ -71,4 +73,4 @@ tree = __read(root, ctx)
 if ctx.has_flag("stockfish"):
     __estimate(tree, ctx)
     tree.eval()
-__write(json_path, __to_json(tree,ctx.get_value_or_exit("pgn")))
+__write(json_path, __to_json(tree, ctx.get_value_or_exit("pgn")))
