@@ -34,6 +34,3 @@ class Node:
 
     def to_dict(self):
         pass
-
-    def size(self):
-        pass

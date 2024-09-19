@@ -20,7 +20,7 @@ class MixValues:
 def get_best_for_node(node: 'MixNode', stockfish_path: str, time: int) -> str:
     stockfish = Stockfish(stockfish_path)
     path = node.path_from_root()
-    print("P", path)
+    #print("P", path)
     stockfish.set_position(path)
     best = stockfish.get_best_move_time(time)
     return best
@@ -42,8 +42,12 @@ class MixNode(Node):
         if node.variations and depth <= self.values.max_depth:
             self.children[node.move.uci()].insert(result, node.variations[0], depth + 1)
 
+    def cut_size(self):
+        return 1 + sum(
+            map(lambda x: x.cut_size(), filter(lambda x: x.count > self.values.cut_off, self.children.values())))
+
     def size(self):
-        return 1 + sum(map(lambda x: x.size(), filter(lambda x: x.count > self.values.cut_off,self.children.values())))
+        return 1 + sum(map(lambda x: x.size(), self.children.values()))
 
     def path_from_root(self) -> list[str]:
         if self.root is None:
@@ -90,6 +94,7 @@ class MixNode(Node):
 
     def eval(self):
         nodes = self.get_nodes_list()
+        print("E ", len(nodes))
 
         with concurrent.futures.ThreadPoolExecutor(10) as executor:
             futures = [(executor.submit(get_best_for_node, n, self.values.stockfish, self.values.time), n)
@@ -98,5 +103,3 @@ class MixNode(Node):
 
         for e, n in results:
             n.eval = e
-
-        print("E ", len(nodes))
