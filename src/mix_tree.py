@@ -16,11 +16,18 @@ class MixValues:
         self.max_depth = ctx.get_value_or_default("max_depth", 5)
         self.stockfish = ctx.get_value_or_exit("stockfish")
 
+    def to_dict(self):
+        return {
+            "time_per_node": self.time,
+            "cut_off": self.cut_off,
+            "max_depth": self.max_depth,
+        }
+
 
 def get_best_for_node(node: 'MixNode', stockfish_path: str, time: int) -> str:
     stockfish = Stockfish(stockfish_path)
     path = node.path_from_root()
-    #print("P", path)
+    # print("P", path)
     stockfish.set_position(path)
     best = stockfish.get_best_move_time(time)
     return best

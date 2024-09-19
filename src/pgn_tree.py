@@ -13,6 +13,13 @@ class PgnValues:
         self.max_depth = ctx.get_value_or_default("max_depth", 5)
         self.debug = ctx.has_flag("debug")
 
+    def to_dict(self):
+        return {
+            "node_cut_off": self.node_cut_off,
+            "eval_cut_off": self.eval_cut_off,
+            "max_depth": self.max_depth,
+        }
+
 
 class PgnNode(Node):
     def __init__(self, color: Color, values: PgnValues):

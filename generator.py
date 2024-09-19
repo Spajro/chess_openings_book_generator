@@ -57,6 +57,13 @@ def __estimate(tree, ctx: Context):
           )
 
 
+def __to_json(tree,pgn):
+    jsonable = tree.to_dict()
+    jsonable["values"] = tree.values.to_dict()
+    jsonable["values"]["pgn"]=pgn
+    return json.dumps(jsonable)
+
+
 ctx = config.parse_argv()
 json_path = ctx.params[0]
 root = __get_root(ctx)
@@ -64,4 +71,4 @@ tree = __read(root, ctx)
 if ctx.has_flag("stockfish"):
     __estimate(tree, ctx)
     tree.eval()
-__write(json_path, json.dumps(tree.to_dict()))
+__write(json_path, __to_json(tree,ctx.get_value_or_exit("pgn")))
