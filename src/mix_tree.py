@@ -93,12 +93,9 @@ class MixNode(Node):
 
     def get_nodes_list(self):
         if self.count > self.values.cut_off:
-            result = [self]
+            return [self] + [x for xs in self.children.values() for x in xs.get_nodes_list()]
         else:
-            result = []
-        for children in self.children.values():
-            result += children.get_nodes_list()
-        return result
+            return []
 
     def eval(self):
         nodes = self.get_nodes_list()
