@@ -43,16 +43,12 @@ def parse_argv() -> Context:
         index += 1
 
     while index < len(tokens):
-        if not __is_flag(tokens[index]):
-            print("ERROR")
-            exit(-1)
-        
         key = tokens[index]
         index += 1
-        temp = []
+
+        flags[key] = []
         while index < len(tokens) and not __is_flag(tokens[index]):
-            temp.append(tokens[index])
+            flags[key].append(tokens[index])
             index += 1
-        flags[key] = temp
 
     return Context(params, flags)
