@@ -50,11 +50,11 @@ def __estimate(tree, ctx: Context):
     cut_size = tree.cut_size()
     tpn = ctx.get_value_or_default("time_per_node", 5 * 1000)
     threads = ctx.get_value_or_default("threads", 10)
-    estimate = ((cut_size * tpn) / threads)
+    estimate = ((cut_size * tpn) / threads) / 1000
     date = datetime.datetime.fromtimestamp(time.time() + estimate).strftime('%c')
     print("Nodes: ", size,
           "\nNodes after cut: ", cut_size,
-          "\nTime estimation: ", estimate / 1000, "s",
+          "\nTime estimation: ", estimate, "s",
           "\nFinish time estimation: ", date
           )
 
