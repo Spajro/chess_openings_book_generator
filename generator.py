@@ -66,11 +66,20 @@ def __to_json(tree, pgn):
     return json.dumps(jsonable)
 
 
+def timed(f, text):
+    start = time.time()
+    result = f()
+    elapsed = time.time() - start
+    print(text, elapsed, "s")
+    return result
+
+
 ctx = config.parse_argv()
 json_path = ctx.params[0]
 root = __get_root(ctx)
-tree = __read(root, ctx)
+tree = timed(lambda: __read(root, ctx), "Read")
 if ctx.has_flag("stockfish"):
     __estimate(tree, ctx)
-    tree.eval()
-__write(json_path, __to_json(tree, ctx.get_value_or_exit("pgn")))
+    timed(tree.eval(), "Eval")
+json = timed(__to_json(tree, ctx.get_value_or_exit("pgn")), "Json")
+__write(json_path, json)
