@@ -38,7 +38,7 @@ def get_best_for_node(node: 'MixNode', stockfish_path: str, time: int) -> str:
 class MixNode(Node):
     def __init__(self, color: Color, root: Union['MixNode', None], values: MixValues):
         self.count: int = 0
-        self.eval: float
+        self.evaluation: float
         self.children: dict[str, 'MixNode'] = dict()
         self.color = color
         self.root = root
@@ -69,7 +69,7 @@ class MixNode(Node):
         return self.root.__path_from_root(self) + [next(move for move, node in self.children.items() if node == last)]
 
     def to_dict(self):
-        candidates = list((k, v.eval) for (k, v) in self.children.items() if v.count > self.values.cut_off)
+        candidates = list((k, v.evaluation) for (k, v) in self.children.items() if v.count > self.values.cut_off)
 
         if len(candidates) == 0:
             return None
@@ -81,7 +81,7 @@ class MixNode(Node):
 
         result = [("best", best)]
         if self.values.save_eval:
-            result.append(("eval", self.eval))
+            result.append(("eval", self.evaluation))
 
         # build tree recursively
         if self.children:
@@ -100,9 +100,8 @@ class MixNode(Node):
         else:
             return []
 
-    def eval(self):
+    def evaluate(self):
         nodes = self.get_nodes_list()
-        print("E ", len(nodes))
 
         with concurrent.futures.ThreadPoolExecutor(self.values.threads) as executor:
             futures = [(executor.submit(get_best_for_node, n, self.values.stockfish, self.values.time), n)
@@ -110,4 +109,10 @@ class MixNode(Node):
         results = [(f.result(), n) for f, n in futures]
 
         for e, n in results:
-            n.eval = e
+            n.evaluation = e
+
+    def load_eval(self, prev):
+        self.evaluation = prev["eval"]
+        for move, node in self.children.items():
+            if move in prev:
+                node.load_eval(prev[move])

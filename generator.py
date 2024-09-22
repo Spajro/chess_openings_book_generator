@@ -66,6 +66,10 @@ def __to_json(tree, pgn):
     return json.dumps(jsonable)
 
 
+def __from_json(jsonable):
+    return json.load(jsonable)
+
+
 def timed(f, text):
     start = time.time()
     result = f()
@@ -78,8 +82,10 @@ ctx = config.parse_argv()
 json_path = ctx.params[0]
 root = __get_root(ctx)
 tree = timed(lambda: __read(root, ctx), "Read")
+if ctx.has_flag("expand"):
+    timed(lambda: tree.load_eval(__from_json(open(ctx.get_value_or_exit("expand"), encoding="utf-8"))), "Load")
 if ctx.has_flag("stockfish"):
     __estimate(tree, ctx)
-    timed(tree.eval(), "Eval")
-json = timed(__to_json(tree, ctx.get_value_or_exit("pgn")), "Json")
+    timed(lambda: tree.evaluate(), "Eval")
+json = timed(lambda: __to_json(tree, ctx.get_value_or_exit("pgn")), "Json")
 __write(json_path, json)
