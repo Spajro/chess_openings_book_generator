@@ -17,7 +17,6 @@ class MixValues:
         self.max_depth = ctx.get_value_or_default("max_depth", 5)
         self.threads = ctx.get_value_or_default("threads", 10)
         self.stockfish = ctx.get_value_or_exit("stockfish")
-        self.save_eval = ctx.has_flag("save_eval")
 
     def to_dict(self):
         return {
