@@ -1,5 +1,4 @@
 import concurrent.futures
-from operator import itemgetter
 from typing import Union
 
 import chess.pgn
@@ -7,6 +6,8 @@ from stockfish import Stockfish
 
 from src.config import Context
 from src.core import Color, next_color, Node
+
+EMPTY = 'X'
 
 
 class MixValues:
@@ -38,7 +39,7 @@ def get_best_for_node(node: 'MixNode', stockfish_path: str, time: int) -> str:
 class MixNode(Node):
     def __init__(self, color: Color, root: Union['MixNode', None], values: MixValues):
         self.count: int = 0
-        self.evaluation: float
+        self.evaluation: str = EMPTY
         self.children: dict[str, 'MixNode'] = dict()
         self.color = color
         self.root = root
@@ -69,21 +70,6 @@ class MixNode(Node):
         return self.root.__path_from_root(self) + [next(move for move, node in self.children.items() if node == last)]
 
     def to_dict(self):
-        candidates = list((k, v.evaluation) for (k, v) in self.children.items() if v.count > self.values.cut_off)
-
-        if len(candidates) == 0:
-            return None
-
-        if self.color == Color.WHITE:
-            best = max(candidates, key=itemgetter(1))[0]
-        else:
-            best = min(candidates, key=itemgetter(1))[0]
-
-        result = [("best", best)]
-        if self.values.save_eval:
-            result.append(("eval", self.evaluation))
-
-        # build tree recursively
         if self.children:
             non_empty_children = [(k, v) for k, v in self.children.items() if
                                   v.children and v.count > self.values.cut_off]
@@ -91,14 +77,16 @@ class MixNode(Node):
         else:
             children_dicts = []
 
-        result += children_dicts
-        return {k: v for (k, v) in result}
+        return {k: v for (k, v) in [("best", self.evaluation)] + children_dicts}
 
     def get_nodes_list(self):
+        result = []
+
         if self.count > self.values.cut_off:
-            return [self] + [x for xs in self.children.values() for x in xs.get_nodes_list()]
-        else:
-            return []
+            result += [x for xs in self.children.values() for x in xs.get_nodes_list()]
+            if self.evaluation == EMPTY:
+                result.append(self)
+        return result
 
     def evaluate(self):
         nodes = self.get_nodes_list()
@@ -112,7 +100,6 @@ class MixNode(Node):
             n.evaluation = e
 
     def load_eval(self, prev):
-        self.evaluation = prev["eval"]
-        for move, node in self.children.items():
-            if move in prev:
-                node.load_eval(prev[move])
+        self.evaluation = prev["best"]
+        for move, node in [(m, n) for m, n in self.children.items() if m in prev]:
+            node.load_eval(prev[move])
