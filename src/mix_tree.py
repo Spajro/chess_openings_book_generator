@@ -55,6 +55,14 @@ class MixNode(Node):
         return 1 + sum(
             map(lambda x: x.cut_size(), filter(lambda x: x.count > self.values.cut_off, self.children.values())))
 
+    def eval_size(self):
+        result = sum(
+            map(lambda x: x.eval_size(),
+                filter(lambda x: x.count > self.values.cut_off, self.children.values())))
+        if self.evaluation == EMPTY:
+            result += 1
+        return result
+
     def size(self):
         return 1 + sum(map(lambda x: x.size(), self.children.values()))
 

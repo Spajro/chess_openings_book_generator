@@ -48,12 +48,14 @@ def __get_root(ctx: Context):
 def __estimate(tree, ctx: Context):
     size = tree.size()
     cut_size = tree.cut_size()
+    eval_size = tree.eval_size()
     tpn = ctx.get_value_or_default("time_per_node", 5 * 1000)
     threads = ctx.get_value_or_default("threads", 10)
-    estimate = ((cut_size * tpn) / threads) / 1000
+    estimate = ((eval_size * tpn) / threads) / 1000
     date = datetime.datetime.fromtimestamp(time.time() + estimate).strftime('%c')
     print("Nodes: ", size,
           "\nNodes after cut: ", cut_size,
+          "\nNodes to evaluate", eval_size,
           "\nTime estimation: ", estimate, "s",
           "\nFinish time estimation: ", date
           )
